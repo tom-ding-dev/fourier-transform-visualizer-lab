@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>傅里叶变换交互实验室 | Fourier Transform Lab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 16px;
+            border: 1px solid rgba(94, 234, 212, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #5eead4, #0ea5e9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 968px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            color: #5eead4;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #5eead4, #0ea5e9);
+            border-radius: 2px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 250px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 8px;
+            border: 1px solid rgba(94, 234, 212, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5eead4, #0ea5e9);
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 6px rgba(14, 165, 233, 0.4);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .value-display {
+            font-family: 'Courier New', monospace;
+            color: #5eead4;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 6px rgba(14, 165, 233, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(14, 165, 233, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #64748b, #475569);
+            box-shadow: 0 4px 6px rgba(100, 116, 139, 0.3);
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .preset-btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            background: rgba(94, 234, 212, 0.1);
+            border: 1px solid rgba(94, 234, 212, 0.3);
+            color: #5eead4;
+        }
+
+        .preset-btn:hover {
+            background: rgba(94, 234, 212, 0.2);
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .epicycle-canvas {
+            height: 400px;
+        }
+
+        .formula-display {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            color: #5eead4;
+            margin-top: 12px;
+            border-left: 4px solid #0ea5e9;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .info-box {
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .harmonic-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+
+        .harmonic-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: rgba(15, 23, 42, 0.5);
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .harmonic-item button {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #0ea5e9;
+            cursor: pointer;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .stat-box {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(94, 234, 212, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            color: #5eead4;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            border-bottom: 1px dotted #5eead4;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            z-index: 1000;
+            border: 1px solid rgba(94, 234, 212, 0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 傅里叶变换交互实验室</h1>
+            <p class="subtitle">通过实时可视化理解时域与频域的转换关系 | Interactive Fourier Transform Visualization</p>
+        </header>
+
+        <!-- 控制面板 -->
+        <div class="panel full-width">
+            <div class="panel-title">🎛️ 信号构建器 Signal Builder</div>
+            <div class="preset-buttons">
+                <button class="preset-btn" onclick="loadPreset('sine')">纯正弦波</button>
+                <button class="preset-btn" onclick="loadPreset('square')">方波近似</button>
+                <button class="preset-btn" onclick="loadPreset('sawtooth')">锯齿波</button>
+                <button class="preset-btn" onclick="loadPreset('triangle')">三角波</button>
+                <button class="preset-btn" onclick="loadPreset('pulse')">脉冲串</button>
+                <button class="preset-btn" onclick="loadPreset('beat')">拍频现象</button>
+                <button class="preset-btn" onclick="clearAll()">🗑️ 清空</button>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>频率 Frequency (Hz)</label>
+                    <input type="range" id="freqSlider" min="1" max="20" value="1" step="1">
+                    <span class="value-display" id="freqValue">1 Hz</span>
+                </div>
+                <div class="control-group">
+                    <label>振幅 Amplitude</label>
+                    <input type="range" id="ampSlider" min="0" max="100" value="50">
+                    <span class="value-display" id="ampValue">0.50</span>
+                </div>
+                <div class="control-group">
+                    <label>相位 Phase (°)</label>
+                    <input type="range" id="phaseSlider" min="0" max="360" value="0">
+                    <span class="value-display" id="phaseValue">0°</span>
+                </div>
+                <button onclick="addHarmonic()">➕ 添加谐波</button>
+            </div>
+
+            <div class="harmonic-list" id="harmonicList"></div>
+            
+            <div class="formula-display" id="formulaDisplay">
+                f(t) = 0
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- 时域信号 -->
+            <div class="panel">
+                <div class="panel-title">📈 时域信号 Time Domain</div>
+                <canvas id="timeCanvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #5eead4;"></div>
+                        <span>合成信号</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(94, 234, 212, 0.3);"></div>
+                        <span>各分量</span>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">采样点数</div>
+                        <div class="stat-value" id="sampleCount">1024</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">时间跨度</div>
+                        <div class="stat-value">2s</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 频域表示 -->
+            <div class="panel">
+                <div class="panel-title">📊 频谱分析 Frequency Domain</div>
+                <canvas id="freqCanvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f472b6;"></div>
+                        <span>幅度谱 |X(f)|</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #0ea5e9;"></div>
+                        <span>相位谱 ∠X(f)</span>
+                    </div>
+                </div>
+                <div class="controls" style="margin-top: 12px;">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="showPhase" checked>
+                        <label for="showPhase" style="margin: 0; cursor: pointer;">显示相位谱</label>
+                    </div>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="logScale">
+                        <label for="logScale" style="margin: 0; cursor: pointer;">对数坐标</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 环形可视化 -->
+        <div class="panel full-width">
+            <div class="panel-title">🎯 旋转矢量可视化 Epicycles (傅里叶级数几何解释)</div>
+            <canvas id="epicycleCanvas" class="epicycle-canvas"></canvas>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fbbf24;"></div>
+                    <span>旋转矢量 (各频率分量)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #5eead4;"></div>
+                    <span>轨迹追踪</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(255,255,255,0.3);"></div>
+                    <span>矢量连线</span>
+                </div>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>动画速度</label>
+                    <input type="range" id="speedSlider" min="0" max="100" value="30">
+                </div>
+                <div class="control-group">
+                    <label>矢量数量 (精度)</label>
+                    <input type="range" id="vectorCount" min="1" max="50" value="20">
+                    <span class="value-display" id="vectorValue">20</span>
+                </div>
+                <button onclick="toggleAnimation()" id="animBtn">⏸️ 暂停</button>
+                <button class="secondary" onclick="resetAnimation()">↺ 重置</button>
+            </div>
+            <div class="info-box">
+                <strong>💡 教学提示：</strong>观察右侧的环形（周转圆）如何叠加形成左侧的波形。每个圆代表一个频率分量，半径代表振幅，旋转速度代表频率，初始角度代表相位。这正是傅里叶级数的物理意义：任何周期信号都可以分解为不同频率旋转矢量的和。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let harmonics = []; // 存储各谐波分量 {freq, amp, phase}
+        let time = 0;
+        let isAnimating = true;
+        let animationId;
+        let trail = []; // 轨迹点
+        
+        // DOM 元素
+        const timeCanvas = document.getElementById('timeCanvas');
+        const freqCanvas = document.getElementById('freqCanvas');
+        const epicycleCanvas = document.getElementById('epicycleCanvas');
+        const timeCtx = timeCanvas.getContext('2d');
+        const freqCtx = freqCanvas.getContext('2d');
+        const epicycleCtx = epicycleCanvas.getContext('2d');
+
+        // 初始化画布尺寸
+        function resizeCanvases() {
+            const dpr = window.devicePixelRatio || 1;
+            [timeCanvas, freqCanvas, epicycleCanvas].forEach(canvas => {
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                canvas.getContext('2d').scale(dpr, dpr);
+            });
+        }
+
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
+
+        // 更新滑块显示值
+        document.getElementById('freqSlider').addEventListener('input', (e) => {
+            document.getElementById('freqValue').textContent = e.target.value + ' Hz';
+        });
+        document.getElementById('ampSlider').addEventListener('input', (e) => {
+            document.getElementById('ampValue').textContent = (e.target.value / 100).toFixed(2);
+        });
+        document.getElementById('phaseSlider').addEventListener('input', (e) => {
+            document.getElementById('phaseValue').textContent = e.target.value + '°';
+        });
+        document.getElementById('vectorCount').addEventListener('input', (e) => {
+            document.getElementById('vectorValue').textContent = e.target.value;
+        });
+
+        // 添加谐波
+        function addHarmonic() {
+            const freq = parseInt(document.getElementById('freqSlider').value);
+            const amp = parseInt(document.getElementById('ampSlider').value) / 100;
+            const phase = parseInt(document.getElementById('phaseSlider').value);
+            
+            // 检查是否已存在相同频率
+            const existing = harmonics.find(h => h.freq === freq);
+            if (existing) {
+                existing.amp = amp;
+                existing.phase = phase;
+            } else {
+                harmonics.push({ freq, amp, phase });
+            }
+            
+            harmonics.sort((a, b) => a.freq - b.freq);
+            updateHarmonicList();
+            updateFormula();
+            trail = []; // 清除轨迹
+        }
+
+        // 删除谐波
+        function removeHarmonic(index) {
+            harmonics.splice(index, 1);
+            updateHarmonicList();
+            updateFormula();
+            trail = [];
+        }
+
+        // 更新谐波列表UI
+        function updateHarmonicList() {
+            const list = document.getElementById('harmonicList');
+            if (harmonics.length === 0) {
+                list.innerHTML = '<div style="color: #64748b; text-align: center; padding: 20px;">暂无谐波分量，请添加频率成分</div>';
+                return;
+            }
+            
+            list.innerHTML = harmonics.map((h, i) => `
+                <div class="harmonic-item">
+                    <span>
+                        <span style="color: #5eead4; font-weight: bold;">${h.freq}Hz</span> × 
+                        <span style="color: #f472b6;">${h.amp.toFixed(2)}</span> × 
+                        <span style="color: #fbbf24;">∠${h.phase}°</span>
+                    </span>
+                    <button class="danger" onclick="removeHarmonic(${i})">删除</button>
+                </div>
+            `).join('');
+        }
+
+        // 更新数学公式显示
+        function updateFormula() {
+            const formula = document.getElementById('formulaDisplay');
+            if (harmonics.length === 0) {
+                formula.textContent = 'f(t) = 0';
+                return;
+            }
+            
+            const terms = harmonics.map(h => {
+                const phaseRad = (h.phase * Math.PI / 180).toFixed(2);
+                return `${h.amp.toFixed(2)}·sin(2π·${h.freq}t + ${h.phase}°)`;
+            });
+            
+            formula.textContent = 'f(t) = ' + terms.join(' + ');
+        }
+
+        // 计算时域信号值
+        function getSignalValue(t) {
+            return harmonics.reduce((sum, h) => {
+                const phaseRad = h.phase * Math.PI / 180;
+                return sum + h.amp * Math.sin(2 * Math.PI * h.freq * t + phaseRad);
+            }, 0);
+        }
+
+        // 离散傅里叶变换 (DFT)
+        function computeDFT(signal) {
+            const N = signal.length;
+            const spectrum = [];
+            
+            for (let k = 0; k < N / 2; k++) {
+                let real = 0;
+                let imag = 0;
+                for (let n = 0; n < N; n++) {
+                    const angle = -2 * Math.PI * k * n / N;
+                    real += signal[n] * Math.cos(angle);
+                    imag += signal[n] * Math.sin(angle);
+                }
+                const magnitude = Math.sqrt(real * real + imag * imag) * 2 / N;
+                const phase = Math.atan2(imag, real) * 180 / Math.PI;
+                spectrum.push({ freq: k, magnitude, phase });
+            }
+            return spectrum;
+        }
+
+        // 绘制时域图
+        function drawTimeDomain() {
+            const ctx = timeCtx;
+            const width = timeCanvas.width / (window.devicePixelRatio || 1);
+            const height = timeCanvas.height / (window.devicePixelRatio || 1);
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // 网格
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = height * i / 4;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            // 中心线
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+            
+            // 绘制各分量（半透明）
+            harmonics.forEach(h => {
+                ctx.strokeStyle = `rgba(94, 234, 212, ${0.15})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let x = 0; x < width; x++) {
+                    const t = (x / width) * 2; // 2秒时间窗口
+                    const phaseRad = h.phase * Math.PI / 180;
+                    const y = h.amp * Math.sin(2 * Math.PI * h.freq * t + phaseRad);
+                    const pixelY = height / 2 - y * (height / 3);
+                    if (x === 0) ctx.moveTo(x, pixelY);
+                    else ctx.lineTo(x, pixelY);
+                }
+                ctx.stroke();
+            });
+            
+            // 绘制合成信号
+            ctx.strokeStyle = '#5eead4';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const signal = [];
+            for (let x = 0; x < width; x++) {
+                const t = (x / width) * 2;
+                const y = getSignalValue(t);
+                signal.push(y);
+                const pixelY = height / 2 - y * (height / 3);
+                if (x === 0) ctx.moveTo(x, pixelY);
+                else ctx.lineTo(x, pixelY);
+            }
+            ctx.stroke();
+            
+            // 绘制当前时间指示器
+            const currentX = (time % 2) / 2 * width;
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(currentX, 0);
+            ctx.lineTo(currentX, height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            return signal;
+        }
+
+        // 绘制频域图
+        function drawFrequencyDomain(signal) {
+            const ctx = freqCtx;
+            const width = freqCanvas.width / (window.devicePixelRatio || 1);
+            const height = freqCanvas.height / (window.devicePixelRatio || 1);
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const spectrum = computeDFT(signal);
+            const maxFreq = 50; // 显示最高频率
+            const barWidth = width / maxFreq;
+            const showPhase = document.getElementById('showPhase').checked;
+            const logScale = document.getElementById('logScale').checked;
+            
+            // 绘制幅度谱
+            spectrum.slice(0, maxFreq).forEach((bin, i) => {
+                let mag = bin.magnitude;
+                if (logScale && mag > 0) {
+                    mag = 20 * Math.log10(mag * 100 + 1) / 20; // 简单的对数映射
+                }
+                
+                const barHeight = mag * (height / 2) * 0.9;
+                const x = i * barWidth;
+                const y = height / 2 - barHeight;
+                
+                // 渐变色
+                const gradient = ctx.createLinearGradient(0, y, 0, height / 2);
+                gradient.addColorStop(0, '#f472b6');
+                gradient.addColorStop(1, 'rgba(244, 114, 182, 0.2)');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x + 1, y, barWidth - 2, barHeight);
+                
+                // 频率标签（每5个显示一个）
+                if (i % 5 === 0 && i < maxFreq - 1) {
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(i + 'Hz', x + barWidth / 2, height / 2 + 15);
+                }
+            });
+            
+            // 绘制相位谱（下半部分）
+            if (showPhase) {
+                ctx.strokeStyle = '#0ea5e9';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                spectrum.slice(0, maxFreq).forEach((bin, i) => {
+                    const phaseHeight = (bin.phase / 180) * (height / 4);
+                    const x = i * barWidth + barWidth / 2;
+                    const y = height * 0.75 - phaseHeight;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+                
+                // 相位基准线
+                ctx.strokeStyle = 'rgba(14, 165, 233, 0.3)';
+                ctx.setLineDash([2, 2]);
+                ctx.beginPath();
+                ctx.moveTo(0, height * 0.75);
+                ctx.lineTo(width, height * 0.75);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // 分隔线
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+        }
+
+        // 绘制环形可视化（周转圆）
+        function drawEpicycles() {
+            const ctx = epicycleCtx;
+            const width = epicycleCanvas.width / (window.devicePixelRatio || 1);
+            const height = epicycleCanvas.height / (window.devicePixelRatio || 1);
+            const centerX = width / 3;
+            const centerY = height / 2;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // 限制矢量数量
+            const maxVectors = parseInt(document.getElementById('vectorCount').value);
+            const activeHarmonics = harmonics.slice(0, maxVectors);
+            
+            let x = centerX;
+            let y = centerY;
+            
+            // 绘制每个旋转矢量
+            activeHarmonics.forEach((h, i) => {
+                const prevX = x;
+                const prevY = y;
+                
+                // 计算当前角度
+                const phaseRad = h.phase * Math.PI / 180;
+                const angle = 2 * Math.PI * h.freq * time + phaseRad;
+                
+                // 计算终点
+                const radius = h.amp * 80; // 缩放因子
+                x += radius * Math.cos(angle);
+                y += radius * Math.sin(angle);
+                
+                // 绘制圆环
+                ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 + 0.1 * (1 - i / maxVectors)})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(prevX, prevY, Math.abs(radius), 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // 绘制矢量线
+                ctx.strokeStyle = `rgba(251, 191, 36, ${0.6 + 0.4 * (1 - i / maxVectors)})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                // 绘制中心点
+                ctx.fillStyle = '#fbbf24';
+                ctx.beginPath();
+                ctx.arc(prevX, prevY, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // 绘制最终点
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 添加轨迹点
+            trail.push({ x, y });
+            if (trail.length > 300) trail.shift();
+            
+            // 绘制轨迹
+            ctx.strokeStyle = '#5eead4';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            trail.forEach((point, i) => {
+                if (i === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            ctx.stroke();
+            
+            // 绘制连接到波形图
+            const waveX = width * 0.7;
+            const waveY = y;
+            
+            // 连接线
+            ctx.strokeStyle = 'rgba(94, 234, 212, 0.5)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(waveX, waveY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 绘制右侧波形
+            ctx.strokeStyle = '#5eead4';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            // 使用历史轨迹绘制波形
+            for (let i = 0; i < trail.length; i++) {
+                const px = waveX + (trail.length - i) * 2;
+                const py = trail[trail.length - 1 - i].y;
+                if (px < width) {
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+            
+            // 标签
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px sans-serif';
+            ctx.fillText('旋转矢量合成', 10, 20);
+            ctx.fillText('波形展开', waveX, 20);
+        }
+
+        // 动画循环
+        function animate() {
+            if (!isAnimating) return;
+            
+            const speed = parseInt(document.getElementById('speedSlider').value) / 1000;
+            time += speed;
+            
+            const signal = drawTimeDomain();
+            drawFrequencyDomain(signal);
+            drawEpicycles();
+            
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 控制函数
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            document.getElementById('animBtn').textContent = isAnimating ? '⏸️ 暂停' : '▶️ 播放';
+            if (isAnimating) animate();
+        }
+
+        function resetAnimation() {
+            time = 0;
+            trail = [];
+        }
+
+        function clearAll() {
+            harmonics = [];
+            updateHarmonicList();
+            updateFormula();
+            trail = [];
+        }
+
+        // 预设加载
+        function loadPreset(type) {
+            harmonics = [];
+            switch(type) {
+                case 'sine':
+                    harmonics.push({ freq: 1, amp: 1.0, phase: 0 });
+                    break;
+                case 'square':
+                    // 方波：奇次谐波，振幅 1/n
+                    for (let n = 1; n <= 15; n += 2) {
+                        harmonics.push({ freq: n, amp: 4 / (n * Math.PI) * 0.8, phase: 0 });
+                    }
+                    break;
+                case 'sawtooth':
+                    // 锯齿波：所有谐波，振幅 1/n，交替相位
+                    for (let n = 1; n <= 20; n++) {
+                        harmonics.push({ 
+                            freq: n, 
+                            amp: 2 / (n * Math.PI) * 0.8, 
+                            phase: n % 2 === 0 ? 180 : 0 
+                        });
+                    }
+                    break;
+                case 'triangle':
+                    // 三角波：奇次谐波，振幅 1/n²，交替相位
+                    for (let n = 1; n <= 15; n += 2) {
+                        harmonics.push({ 
+                            freq: n, 
+                            amp: 8 / (Math.PI * Math.PI * n * n), 
+                            phase: n % 4 === 1 ? 0 : 180 
+                        });
+                    }
+                    break;
+                case 'pulse':
+                    harmonics.push({ freq: 1, amp: 1.0, phase: 0 });
+                    harmonics.push({ freq: 2, amp: 1.0, phase: 0 });
+                    harmonics.push({ freq: 3, amp: 1.0, phase: 0 });
+                    harmonics.push({ freq: 4, amp: 1.0, phase: 0 });
+                    harmonics.push({ freq: 5, amp: 1.0, phase: 0 });
+                    break;
+                case 'beat':
+                    // 拍频：两个相近频率
+                    harmonics.push({ freq: 5, amp: 0.5, phase: 0 });
+                    harmonics.push({ freq: 6, amp: 0.5, phase: 0 });
+                    break;
+            }
+            updateHarmonicList();
+            updateFormula();
+            trail = [];
+        }
+
+        // 初始化
+        loadPreset('square');
+        animate();
+    </script>
+</body>
+</html>
